@@ -1,0 +1,15 @@
+target*
+target/
+target/*
+.idea*
+.idea/*
+.idea/
+dependencies/
+uid2-operator.iml
+build/**
+e2e-target
+.DS_Store
+*/node_modules/*
+*.iml
+# Ignore generated credentials from google-github-actions/auth
+gha-creds-*.json
