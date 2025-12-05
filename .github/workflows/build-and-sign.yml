@@ -58,14 +58,14 @@ jobs:
       # 6️⃣ Sign the JAR (local file)
       - name: Sign JAR artifact
         run: |
-          cosign sign-blob \
+          cosign sign-blob --yes \
             --output-signature target/demo-oidc-java-1.0.0.jar.sig \
             target/demo-oidc-java-1.0.0.jar
 
       # 7️⃣ Sign the provenance JSON
       - name: Sign provenance JSON
         run: |
-          cosign sign-blob \
+          cosign sign-blob --yes \
             --output-signature provenance.json.sig \
             provenance.json
 
