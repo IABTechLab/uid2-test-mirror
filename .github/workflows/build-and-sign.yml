@@ -59,14 +59,14 @@ jobs:
       # 6️⃣ Keyless sign the artifact
       - name: Keyless sign artifact
         run: |
-          cosign sign --yes --keyless \
+          cosign sign --yes \
             --output-signature target/demo-oidc-java-1.0.0.jar.sig \
             target/demo-oidc-java-1.0.0.jar
 
       # 7️⃣ Keyless sign the provenance JSON
       - name: Keyless sign provenance
         run: |
-          cosign sign-blob --yes --keyless \
+          cosign sign-blob --yes \
             --output-signature provenance.json.sig \
             provenance.json
 
