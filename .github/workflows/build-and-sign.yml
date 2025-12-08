@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write     # Required for keyless signing
+  id-token: write
   attestations: write
 
 jobs:
@@ -15,66 +15,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2️⃣ Set up Java 21
       - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
-      # 3️⃣ Build Maven project
       - name: Build with Maven
         run: mvn -B -DskipTests package
 
-      # 4️⃣ Create provenance JSON
       - name: Create provenance JSON
-        run: |
-          ART=target/demo-oidc-java-1.0.0.jar
-          SHA=$(sha256sum "$ART" | awk '{print $1}')
-          cat > provenance.json <<EOF
-          {
-            "artifact": "$ART",
-            "artifact_sha256": "$SHA",
-            "repo": "https://github.com/${{ github.repository }}",
-            "commit": "${{ github.sha }}",
-            "workflow": "${{ github.workflow }}",
-            "run_id": "${{ github.run_id }}",
-            "runner_os": "${{ runner.os }}"
-          }
-          EOF
+        run: ART=target/demo-oidc-java-1.0.0.jar && SHA=$(sha256sum "$ART" | awk '{print $1}') && echo "{\"artifact\":\"$ART\",\"artifact_sha256\":\"$SHA\",\"repo\":\"https://github.com/${{ github.repository }}\",\"commit\":\"${{ github.sha }}\",\"workflow\":\"${{ github.workflow }}\",\"run_id\":\"${{ github.run_id }}\",\"runner_os\":\"${{ runner.os }}\"}" > provenance.json
 
-# 5️⃣ Install Cosign v3
       - name: Install Cosign
         uses: sigstore/cosign-installer@v4.0.0
         with:
           cosign-release: "v3.0.2"
 
-      # 6️⃣ Sign the JAR (Cosign v3 syntax)
       - name: Sign JAR artifact
-        run: |
-          ART=target/demo-oidc-java-1.0.0.jar
-          cosign sign-blob \
-            --output-signature $ART.sig \
-            --output-certificate $ART.pem \
-            --bundle $ART.bundle \
-            $ART
+        run: cosign sign-blob --tlog-upload=true --yes --output-signature target/demo-oidc-java-1.0.0.jar.sig target/demo-oidc-java-1.0.0.jar
 
-      # 7️⃣ Sign provenance JSON
       - name: Sign provenance JSON
-        run: |
-          cosign sign-blob \
-            --output-signature provenance.json.sig \
-            --output-certificate provenance.json.pem \
-            --bundle provenance.json.bundle \
-            provenance.json
+        run: cosign sign-blob --tlog-upload=true --yes --output-signature provenance.json.sig provenance.json
 
-      # 8️⃣ Upload artifacts
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -82,9 +50,5 @@ jobs:
           path: |
             target/demo-oidc-java-1.0.0.jar
             target/demo-oidc-java-1.0.0.jar.sig
-            target/demo-oidc-java-1.0.0.jar.pem
-            target/demo-oidc-java-1.0.0.jar.bundle
             provenance.json
             provenance.json.sig
-            provenance.json.pem
-            provenance.json.bundle
