@@ -50,5 +50,9 @@ jobs:
           path: |
             target/demo-oidc-java-1.0.0.jar
             target/demo-oidc-java-1.0.0.jar.sig
+            target/demo-oidc-java-1.0.0.jar.pem
+            target/demo-oidc-java-1.0.0.jar.bundle
             provenance.json
             provenance.json.sig
+            provenance.json.pem
+            provenance.json.bundle
