@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write   # OIDC keyless signing
+  id-token: write     # Required for keyless signing
   attestations: write
 
 jobs:
@@ -49,24 +49,29 @@ jobs:
           }
           EOF
 
-      # 5️⃣ Install Cosign
+# 5️⃣ Install Cosign v3
       - name: Install Cosign
         uses: sigstore/cosign-installer@v4.0.0
         with:
           cosign-release: "v3.0.2"
 
-      # 6️⃣ Sign the JAR (local file)
+      # 6️⃣ Sign the JAR (Cosign v3 syntax)
       - name: Sign JAR artifact
         run: |
-          cosign sign-blob --yes \
-            --output-signature target/demo-oidc-java-1.0.0.jar.sig \
-            target/demo-oidc-java-1.0.0.jar
+          ART=target/demo-oidc-java-1.0.0.jar
+          cosign sign-blob \
+            --output-signature $ART.sig \
+            --output-certificate $ART.pem \
+            --bundle $ART.bundle \
+            $ART
 
-      # 7️⃣ Sign the provenance JSON
+      # 7️⃣ Sign provenance JSON
       - name: Sign provenance JSON
         run: |
-          cosign sign-blob --yes \
+          cosign sign-blob \
             --output-signature provenance.json.sig \
+            --output-certificate provenance.json.pem \
+            --bundle provenance.json.bundle \
             provenance.json
 
       # 8️⃣ Upload artifacts
@@ -77,5 +82,9 @@ jobs:
           path: |
             target/demo-oidc-java-1.0.0.jar
             target/demo-oidc-java-1.0.0.jar.sig
+            target/demo-oidc-java-1.0.0.jar.pem
+            target/demo-oidc-java-1.0.0.jar.bundle
             provenance.json
             provenance.json.sig
+            provenance.json.pem
+            provenance.json.bundle
