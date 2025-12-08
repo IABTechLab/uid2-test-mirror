@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write   # required for keyless signing
+  id-token: write   # required for GitHub OIDC keyless signing
   attestations: write
 
 jobs:
@@ -32,20 +32,29 @@ jobs:
       - name: Build with Maven
         run: mvn -B -DskipTests package
 
-      # 4️⃣ Install Cosign (required internally by provenance action)
+      # 4️⃣ Ensure artifact exists (fail if missing)
+      - name: Check JAR exists
+        run: |
+          ART=target/demo-oidc-java-1.0.0.jar
+          if [ ! -f "$ART" ]; then
+            echo "ERROR: $ART not found!"
+            exit 1
+          fi
+
+      # 5️⃣ Install Cosign (required internally by provenance action)
       - name: Install Cosign
         uses: sigstore/cosign-installer@v4.0.0
         with:
           cosign-release: "v3.0.2"
 
-      # 5️⃣ Generate and sign SLSA provenance for the JAR
+      # 6️⃣ Generate and sign SLSA provenance for the JAR
       - name: Generate and sign build provenance
         uses: actions/attest-build-provenance@v1
         with:
           subject-path: target/demo-oidc-java-1.0.0.jar
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # 6️⃣ Upload artifacts (JAR + signed provenance)
+      # 7️⃣ Upload artifacts (JAR + signed provenance)
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
