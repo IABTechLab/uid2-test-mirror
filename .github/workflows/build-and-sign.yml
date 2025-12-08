@@ -32,58 +32,24 @@ jobs:
       - name: Build with Maven
         run: mvn -B -DskipTests package
 
-      # 4️⃣ Create provenance JSON
-      - name: Create provenance JSON
-        run: |
-          ART=target/demo-oidc-java-1.0.0.jar
-          SHA=$(sha256sum "$ART" | awk '{print $1}')
-          cat > provenance.json <<EOF
-          {
-            "artifact": "$ART",
-            "artifact_sha256": "$SHA",
-            "repo": "https://github.com/${{ github.repository }}",
-            "commit": "${{ github.sha }}",
-            "workflow": "${{ github.workflow }}",
-            "run_id": "${{ github.run_id }}",
-            "runner_os": "${{ runner.os }}"
-          }
-          EOF
-
-      # 5️⃣ Install Cosign
+      # 4️⃣ Install Cosign (required for provenance signing)
       - name: Install Cosign
         uses: sigstore/cosign-installer@v4.0.0
         with:
           cosign-release: "v3.0.2"
 
-      # 6️⃣ Sign the JAR artifact (keyless)
-      - name: Sign JAR artifact
-        run: |
-          cosign sign-blob --keyless --tlog-upload=true --yes \
-            --output-signature target/demo-oidc-java-1.0.0.jar.sig \
-            --output-certificate target/demo-oidc-java-1.0.0.jar.pem \
-            --bundle target/demo-oidc-java-1.0.0.jar.bundle \
-            target/demo-oidc-java-1.0.0.jar
+      # 5️⃣ Generate and sign SLSA build provenance
+      - name: Generate and sign build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          cosign-keyless: true
+          output: target/provenance.json
 
-      # 7️⃣ Sign the provenance JSON (keyless)
-      - name: Sign provenance JSON
-        run: |
-          cosign sign-blob --keyless --tlog-upload=true --yes \
-            --output-signature provenance.json.sig \
-            --output-certificate provenance.json.pem \
-            --bundle provenance.json.bundle \
-            provenance.json
-
-      # 8️⃣ Upload all artifacts
+      # 6️⃣ Upload artifacts (JAR + signed provenance)
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
           path: |
             target/demo-oidc-java-1.0.0.jar
-            target/demo-oidc-java-1.0.0.jar.sig
-            target/demo-oidc-java-1.0.0.jar.pem
-            target/demo-oidc-java-1.0.0.jar.bundle
-            provenance.json
-            provenance.json.sig
-            provenance.json.pem
-            provenance.json.bundle
+            target/provenance.json
