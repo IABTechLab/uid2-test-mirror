@@ -38,10 +38,10 @@ jobs:
           cosign-release: "v3.0.2"
 
       - name: Sign JAR artifact
-        run: cosign sign-blob --tlog-upload=true --output-signature target/demo-oidc-java-1.0.0.jar.sig --output-certificate target/demo-oidc-java-1.0.0.jar.pem --bundle target/demo-oidc-java-1.0.0.jar.bundle target/demo-oidc-java-1.0.0.jar
+        run: cosign sign-blob --tlog-upload=true --yes --output-signature target/demo-oidc-java-1.0.0.jar.sig --output-certificate target/demo-oidc-java-1.0.0.jar.pem --bundle target/demo-oidc-java-1.0.0.jar.bundle target/demo-oidc-java-1.0.0.jar
 
       - name: Sign provenance JSON
-        run: cosign sign-blob --tlog-upload=true --output-signature provenance.json.sig --output-certificate provenance.json.pem --bundle provenance.json.bundle provenance.json
+        run: cosign sign-blob --tlog-upload=true --yes --output-signature provenance.json.sig --output-certificate provenance.json.pem --bundle provenance.json.bundle provenance.json
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
