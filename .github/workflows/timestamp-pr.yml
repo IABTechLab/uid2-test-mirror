@@ -1,0 +1,56 @@
+name: Write Timestamp and Auto-Merge PR
+
+on:
+  workflow_dispatch:
+
+jobs:
+  timestamp-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Checkout default branch
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Create branch and write timestamp
+        id: create-branch
+        run: |
+          BRANCH="timestamp-update-$(date +%s)"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH"
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > TIMESTAMP
+          git add TIMESTAMP
+          git commit -m "chore: update TIMESTAMP"
+          git push origin "$BRANCH"
+
+      - name: Create pull request
+        id: create-pr
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          PR_URL=$(gh pr create \
+            --base "${{ github.event.repository.default_branch }}" \
+            --head "${{ steps.create-branch.outputs.branch }}" \
+            --title "chore: update TIMESTAMP" \
+            --body "Automated PR: writes current UTC timestamp to TIMESTAMP file.")
+          echo "pr_url=$PR_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Merge pull request
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh pr merge "${{ steps.create-pr.outputs.pr_url }}" \
+            --merge \
+            --delete-branch
